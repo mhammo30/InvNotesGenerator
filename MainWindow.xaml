@@ -1,0 +1,47 @@
+﻿<Window x:Class="InvNotesGenerator.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:InvNotesGenerator"
+        mc:Ignorable="d"
+        Title="Formatted Loot Spliter" Height="450" Width="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="1.75*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1*"/>
+        </Grid.RowDefinitions>
+        <GroupBox Header="Input" Grid.Row="0" Grid.Column="0">
+            <DockPanel>
+                <GroupBox Header="Players" DockPanel.Dock="Top">
+                    <TextBox x:Name="PlayersTextBox"
+                            Margin="2" Height="44" 
+                               ToolTip="Separate name with a comma (,).&#0010;Flag which name starts the gold roundin with an astrisk (*)."
+                               LostFocus="Players_LostFocus"
+                             TextChanged="Players_TextChanged"
+                             AcceptsReturn="True"
+                             AcceptsTab="False"
+                             TextWrapping="Wrap"/>
+                </GroupBox>
+                <GroupBox Header="Items/Currency" DockPanel.Dock="Bottom">
+                    <TextBox x:Name="ItemsTextBox"
+                            Margin="2" 
+                               ToolTip="Start a line with (#) to deonte the title&#0010;For items, # item holder&#0010;For currency #p/g/e/s/c"
+                               LostFocus="Items_LostFocus"
+                             TextChanged="Items_TextChanged"
+                             AcceptsReturn="True"
+                             AcceptsTab="False"
+                             TextWrapping="Wrap"/>
+                </GroupBox>
+            </DockPanel>
+        </GroupBox>
+        <GroupBox Header="Output" Grid.Row="0" Grid.Column="1">
+            <TextBox x:Name="OutputTextBox"
+                     Margin="2" FontFamily="Consolas"
+                     IsReadOnly="True"/>
+        </GroupBox>
+    </Grid>
+</Window>
