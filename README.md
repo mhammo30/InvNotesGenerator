@@ -16,7 +16,7 @@ List the players that are to receive an equal portion of the currency.
 Separate players with a space or on its own line.
 
 the **last** player marked with an **(*)** either at the beginning or end of the players name will be set to be the first player to receive the distributed currency. 
-This is to let the user track which players did were shorted the last iterration currency was handed out and make sure that player is distributed to first.
+This is to let the user track which players were shorted the last time currency was handed out and make sure that player is distributed to first.
 
 #### Example
 
