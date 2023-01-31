@@ -23,6 +23,8 @@ namespace InvNotesGenerator
     public partial class MainWindow : Window
     {
 
+        private static readonly char[] nameSeparators = { ' ', '\n' };
+
         private static readonly string[] itemHeaders = { "Count", "Item", "Holder" };
         private static readonly string[] moneyHeaders = { "Player", "Currency", "Equivalent" };
 
@@ -209,7 +211,7 @@ namespace InvNotesGenerator
         internal void ParsePlayersList(string text)
         {
             playerRounding = 0;
-            players = text.Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            players = text.Split(nameSeparators, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
             for (int i = 0; i < players.Length; ++i)
             {
                 // the last player with an * is flagged by the user to say this player should be the start of the currency distribution
