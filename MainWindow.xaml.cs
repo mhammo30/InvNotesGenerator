@@ -25,6 +25,8 @@ namespace InvNotesGenerator
 
         private static readonly string[] itemHeaders = { "Count", "Item", "Holder" };
         private static readonly string[] moneyHeaders = { "Player", "Currency", "Equivalent" };
+
+        // Plat, Gold, Electrum, Silver, Copper
         private static readonly int[] coinValues = { 1000, 100, 50, 10, 1 };
 
         [GeneratedRegex("([0-9]{1,})g")]
@@ -80,27 +82,35 @@ namespace InvNotesGenerator
 
         internal string SplitCurrency(int plat, int gold, int elec, int silver, int copper)
         {
+            // cant split if we do have have any players
             if (players is null || players.Length == 0)
             {
                 return "";
             }
+
+            
             int totalValue = plat * 1000 + gold * 100 + elec * 50 + silver * 10 + copper;
 
+            // must have a total value > 0 or nothing to split
             if (totalValue == 0)
             {
                 return "";
             }
 
+            // chuck in array for easier iteration
             int[] coinsAvailable = {plat, gold, elec, silver, copper };
 
+            // x axis players, y axis currency, last y index is players total currency value
             int[,] splits = new int[players.Length,coinValues.Length + 1];
 
             int coinIndex = 0;
             int playerIndex = 0;
+
             while (totalValue > 0)
             {
                 playerIndex = 0;
 
+                // find the player with the least currency
                 for (int i = 0; i < players.Length; i++) 
                 { 
                     if (splits[i, coinValues.Length] < splits[playerIndex, coinValues.Length])
@@ -109,13 +119,10 @@ namespace InvNotesGenerator
                     }
                 }
 
-                /*while (splits[playerIndex % players.Length, coinValues.Length] > splits[(playerIndex + 1) % players.Length, coinValues.Length])
-                {
-                    playerIndex++;
-                }*/ 
-
+                // start with plat and use all the available coins before moving on to the next currency
                 if (coinsAvailable[coinIndex] > 0)
                 {
+
                     coinsAvailable[coinIndex]--;
                     splits[playerIndex % players.Length, coinIndex]++;
                     splits[playerIndex % players.Length, coinValues.Length] += coinValues[coinIndex];
@@ -127,6 +134,7 @@ namespace InvNotesGenerator
                 }
             }
 
+            // done sorting currency, find the player with the least currency so we can flag the output
             for (int i = 0; i < players.Length; i++)
             {
                 if (splits[i, coinValues.Length] < splits[playerIndex, coinValues.Length])
@@ -135,6 +143,7 @@ namespace InvNotesGenerator
                 }
             }
 
+            // calculate the longest player name to adjust padding
             int longestName = moneyHeaders[0].Length;
             foreach (string player in players)
             {
@@ -144,6 +153,7 @@ namespace InvNotesGenerator
                 }
             }
 
+            // calculate the padding for all the currencies
             int[] moneyPadding = new int[coinValues.Length];
             for (int i = 0; i < coinValues.Length; i++)
             {
@@ -153,17 +163,20 @@ namespace InvNotesGenerator
                     moneyPadding[i] = digits > moneyPadding[i] ? digits : moneyPadding[i];
                 }
             }
+            // get the total padding of all the currencies so we can padd the headers
             int totalMoneyPadding = moneyPadding.Sum(x => x);
-            int equivPadding = 0;
 
+            int equivPadding = 0;
+            // get the paddig for the equivilent currency coins
             for (int i = 0; i < players.Length; i++)
             {
                 int digits = splits[i, coinValues.Length] == 0 ? 1 : (int)Math.Log10(splits[i, coinValues.Length] / 100);
                 equivPadding = digits > equivPadding ? digits : equivPadding;
             }
-
+            // calculate the header padding
             int equivHeaderPadding = moneyHeaders[2].Length > equivPadding + 8 ? moneyHeaders[2].Length : equivPadding + 8;
 
+            // build the table headers
             string outstr = $"| {moneyHeaders[0].PadRight(longestName)} | " +
                 $"{moneyHeaders[1].PadRight(totalMoneyPadding + 9)} | " +
                 $"{moneyHeaders[2].PadRight(equivHeaderPadding)} |\n" +
@@ -171,20 +184,23 @@ namespace InvNotesGenerator
                 $"{"".PadRight(totalMoneyPadding + 9,'-')} | " +
                 $"{"".PadRight(equivHeaderPadding,'-')} |\n";
 
+
+            // build each row of the table
             for (int i = 0; i < players.Length; i++)
             {
+                // playerRounding flags which player got shorted the last loot distribution so this time we start with them
                 int p = (players.Length - playerRounding + i) % players.Length;
                 outstr += $"| {players[i].PadRight(longestName)} | " +
-                    $"{splits[p, 0].ToString().PadLeft(moneyPadding[0])}p " +
+                    $"{splits[p, 0].ToString().PadLeft(moneyPadding[0])}p " + // pad each currency column
                     $"{splits[p, 1].ToString().PadLeft(moneyPadding[1])}g " +
                     $"{splits[p, 2].ToString().PadLeft(moneyPadding[2])}e " +
                     $"{splits[p, 3].ToString().PadLeft(moneyPadding[3])}s " +
                     $"{splits[p, 4].ToString().PadLeft(moneyPadding[4])}c | " +
                     $"{(splits[p, coinValues.Length] / coinValues[1]).ToString().PadLeft(equivPadding)}g " +
                     $"{(splits[p, coinValues.Length] % coinValues[1]) / coinValues[3]}s " +
-                    $"{splits[p, coinValues.Length] % coinValues[3]}c{"".PadRight(equivHeaderPadding - equivPadding - 7)}|";
+                    $"{splits[p, coinValues.Length] % coinValues[3]}c{"".PadRight(equivHeaderPadding - equivPadding - 7)}|"; // pad the final table border
                 //outstr += $"[{splits[i, coinValues.Length]}]";
-                outstr += p == playerIndex ? " (Rounding)\n" : "\n";
+                outstr += p == playerIndex ? " (Rounding)\n" : "\n"; // flag the first player that is going to be shorted this time around
             }
 
             return outstr;
@@ -196,6 +212,7 @@ namespace InvNotesGenerator
             players = text.Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
             for (int i = 0; i < players.Length; ++i)
             {
+                // the last player with an * is flagged by the user to say this player should be the start of the currency distribution
                 if (players[i].StartsWith('*') || players[i].EndsWith('*'))
                 {
                     players[i] = players[i].Trim('*');
@@ -224,6 +241,7 @@ namespace InvNotesGenerator
 
             foreach (var line in lines)
             {
+                // find all the currencies for the current line, could be multiple entires on a line
                 if (PlatPieces.IsMatch(line))
                 {
                     foreach (Match coins in PlatPieces.Matches(line))
@@ -274,12 +292,15 @@ namespace InvNotesGenerator
                         }
                     }
                 }
+                // items must follow a <# of items> <item name> @<holder> pattern
+                // only 1 item per line
                 if (ItemsRegex.IsMatch(line))
                 {
                     MatchCollection parts = ItemsRegex.Matches(line);
                     items.Add(new(int.Parse(parts[0].Groups[1].Value), parts[0].Groups[2].Value, parts[0].Groups[3].Value));
                     continue;
                 }
+                // the header will be the last line startig with a #
                 if (HeaderRegex.IsMatch(line))
                 {
                     header = HeaderRegex.Match(line).Groups[1].Value;
@@ -287,6 +308,7 @@ namespace InvNotesGenerator
                 }
             }
 
+            // calculate all the paddings for the columns
             string[] itemsLines = new string[items.Count];
             int longestCount = itemHeaders[0].Length;
             int longestItem = itemHeaders[1].Length;
@@ -298,10 +320,12 @@ namespace InvNotesGenerator
                 longestItem = longestItem > items[i].Item2.Length ? longestItem : items[i].Item2.Length;
                 longestName = longestName > items[i].Item3.Length ? longestName : items[i].Item3.Length;
             }
+            // build the items table entries
             for(int i = 0; i < items.Count; i++)
             {
                 itemsLines[i] = $"| {items[i].Item1.ToString().PadRight(longestCount)} | {items[i].Item2.PadRight(longestItem)} | {items[i].Item3.PadRight(longestName)} |\n";
             }
+            // write the header and table headers
             output = $"```# {header}\n| " +
                 $"{itemHeaders[0].PadRight(longestCount)} | " +
                 $"{itemHeaders[1].PadRight(longestItem)} | " +
@@ -310,8 +334,10 @@ namespace InvNotesGenerator
                 $"{"".PadRight(longestItem,'-')} | " +
                 $"{"".PadRight(longestName,'-')} |\n";
 
+            // add the item lines to the output
             foreach (string line in itemsLines) { output += line ; }
 
+            // setup the currency group header
             output += $"\n# Money ({CurrencyPlatinum}p {CurrencyGold}g {CurrencyElectrum}e {CurrencySilver}s {CurrencyCopper}c)\n";
 
             output += SplitCurrency(CurrencyPlatinum, CurrencyGold, CurrencyElectrum, CurrencySilver, CurrencyCopper);
